@@ -4,54 +4,22 @@ const post_url = process.env.POST_URL;
 const postController = {
   getAllPost: async (req, res) => {
     try {
-      const { page, limit, search, category_id } = req.query;
+      const { page, limit, search } = req.query;
       const currentPage = page || 1;
       const itemsPerPage = limit || 10;
       const offset = (currentPage - 1) * itemsPerPage;
 
-      const { count, rows } = category_id
-        ? await db.Post.findAndCountAll({
-            include: db.Category,
-            limit: parseInt(itemsPerPage),
-            offset,
-            where: {
-              name: {
-                [db.Sequelize.Op.like]: `%${search ? search : ""}%`,
-              },
-              category_id: category_id ? category_id : null,
-            },
-          })
-        : await db.Product.findAndCountAll({
-            include: db.Category,
-            limit: parseInt(itemsPerPage),
-            offset,
-            where: {
-              name: {
-                [db.Sequelize.Op.like]: `%${search ? search : ""}%`,
-              },
-            },
-          });
-
+      const { count, rows } = await db.Post.findAndCountAll({
+        limit: parseInt(itemsPerPage),
+        offset,
+        // where: {
+        //   name: {
+        //     [db.Sequelize.Op.like]: `%${search ? search : ""}%`,
+        //   },
+        // },
+      });
       const totalPages = Math.ceil(count / itemsPerPage);
-      const { count: all } = await db.Product.findAndCountAll();
-      const { count: pizza } = await db.Product.findAndCountAll({
-        where: {
-          category_id: 1,
-        },
-      });
-      const { count: pasta } = await db.Product.findAndCountAll({
-        where: {
-          category_id: 2,
-        },
-      });
-
-      return res.send({
-        products: rows,
-        totalPages,
-        all,
-        pizza,
-        pasta,
-      });
+      return res.send({ post: rows, totalPages });
     } catch (err) {
       console.log(err.message);
       return res.status(500).send(err.message);
